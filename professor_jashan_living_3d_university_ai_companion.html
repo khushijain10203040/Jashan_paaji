@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Professor Jashan — Living 3D University AI Companion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            burnt: '#C85A17',
+            burntDark: '#9E420B',
+            peach: '#F7D6BF',
+            cream: '#FAF3EA',
+            offwhite: '#FDFBF7',
+            beige: '#EAD8C3',
+            espresso: '#2C1B12',
+            walnut: '#4A2F20'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #2C1B12;
+      font-family: 'Inter', sans-serif;
+      color: #2C1B12;
+      user-select: none;
+    }
+
+    /* Fullscreen 3D Canvas Layers */
+    #canvas-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      display: block;
+    }
+
+    #canvas-fg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 30;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Warm University Desk UI Layer */
+    #ui-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      #ui-layer {
+        padding: 1.5rem 2rem;
+      }
+    }
+
+    .interactive-panel {
+      pointer-events: auto;
+      background: rgba(253, 251, 247, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(200, 90, 23, 0.22);
+      box-shadow: 0 18px 45px -12px rgba(44, 27, 18, 0.28);
+    }
+
+    /* Custom Scrollbar for Chat Feed */
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: rgba(234, 216, 195, 0.35);
+      border-radius: 999px;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(200, 90, 23, 0.45);
+      border-radius: 999px;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(200, 90, 23, 0.7);
+    }
+
+    /* Status Pulse Dot */
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.25); opacity: 0.5; }
+    }
+    .pulse-dot {
+      animation: pulseSoft 2.2s infinite ease-in-out;
+    }
+
+    /* Cloud Speech Bubble Above Professor Jashan's Head */
+    #cloud-speech {
+      position: fixed;
+      z-index: 40;
+      pointer-events: none;
+      transform: translate(-50%, -100%);
+      max-width: 290px;
+      min-width: 170px;
+      background: linear-gradient(180deg, #FFFFFF 0%, #FAF3EA 100%);
+      border: 2px solid rgba(200, 90, 23, 0.35);
+      border-radius: 26px;
+      padding: 12px 16px;
+      box-shadow:
+        0 14px 30px -6px rgba(44, 27, 18, 0.28),
+        inset 0 2px 6px rgba(255, 255, 255, 0.95);
+      color: #2C1B12;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.28s ease, transform 0.14s ease-out;
+    }
+
+    #cloud-speech.visible {
+      opacity: 1;
+    }
+
+    /* Cloud puffs */
+    #cloud-speech::before {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #FAF3EA;
+      border-right: 2px solid rgba(200, 90, 23, 0.35);
+      border-bottom: 2px solid rgba(200, 90, 23, 0.35);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(44, 27, 18, 0.15);
+    }
+
+    #cloud-speech::after {
+      content: '';
+      position: absolute;
+      bottom: -19px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      background: #FAF3EA;
+      border: 1.5px solid rgba(200, 90, 23, 0.35);
+      border-radius: 50%;
+    }
+
+    .typing-caret {
+      display: inline-block;
+      width: 2px;
+      height: 13px;
+      background-color: #C85A17;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blinkCaret 0.7s infinite;
+    }
+
+    @keyframes blinkCaret {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Welcome Gate Overlay */
+    #welcome-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: radial-gradient(circle at center, rgba(44, 27, 18, 0.38) 0%, rgba(28, 16, 10, 0.78) 100%);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+
+    #welcome-overlay.hidden-gate {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
+
+  <!-- Reliable Three.js CDN Bundle (Works in all sandboxed & offline preview iframes) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Background 3D Scene (Study Desk + Professor Jashan when walking on desk) -->
+  <canvas id="canvas-bg"></canvas>
+
+  <!-- Foreground 3D Layer (Professor Jashan when climbing/peeking over UI or sitting on chat ledge) -->
+  <canvas id="canvas-fg"></canvas>
+
+  <!-- Floating Cloud Speech Bubble above Professor Jashan -->
+  <div id="cloud-speech" role="status" aria-live="polite">
+    <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-burnt mb-1">
+      <span>☁️</span>
+      <span>Prof. Jashan Sir</span>
+    </div>
+    <p id="cloud-speech-text" class="m-0 text-espresso"></p>
+  </div>
+
+  <!-- Welcome Entrance Screen -->
+  <div id="welcome-overlay">
+    <div class="max-w-md w-full bg-offwhite/95 border border-burnt/30 rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-peach/60 border border-burnt/25 text-xs font-semibold text-burntDark mb-4">
+        <span class="w-2 h-2 rounded-full bg-burnt pulse-dot"></span>
+        <span>Department of Computer Science &amp; Academic Studies</span>
+      </div>
+      <h1 class="font-serif text-2xl sm:text-3xl font-bold text-espresso mb-2">
+        Professor Jashan Sir's Desk
+      </h1>
+      <p class="text-sm text-walnut/85 leading-relaxed mb-6">
+        Step inside the miniature digital study room. Professor Jashan is on his desk ready to greet you, read your questions as you type, and help you master any topic.
+      </p>
+      <button id="enter-study-btn" type="button" class="w-full py-3.5 px-6 rounded-2xl bg-burnt hover:bg-burntDark active:scale-[0.98] text-offwhite font-semibold text-sm shadow-lg shadow-burnt/30 transition cursor-pointer flex items-center justify-center gap-2">
+        <span>Enter Study Desk</span>
+        <span aria-hidden="true">→</span>
+      </button>
+      <p class="text-[11px] text-walnut/60 mt-3">
+        Press <kbd class="px-1.5 py-0.5 rounded bg-cream border border-beige font-mono text-espresso">Enter</kbd> or click above to wake Professor Jashan
+      </p>
+    </div>
+  </div>
+
+  <!-- University Desk Interface Overlay -->
+  <div id="ui-layer">
+    <!-- Top University Header Bar -->
+    <header class="flex flex-wrap items-center justify-between gap-3 w-full max-w-6xl mx-auto">
+      <div class="interactive-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-burnt to-burntDark flex items-center justify-center text-offwhite font-serif font-bold text-lg shadow-inner">
+          JS
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-serif font-bold text-base sm:text-lg text-espresso leading-tight">
+              Professor Jashan Sir
+            </h2>
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-peach/70 text-burntDark border border-burnt/20">
+              <span class="w-2 h-2 rounded-full bg-burnt pulse-dot"></span>
+              <span id="status-badge-text">Observing Desk</span>
+            </span>
+          </div>
+          <p class="text-xs text-walnut/80">
+            University Faculty Companion • Interactive 3D Study Room
+          </p>
+        </div>
+      </div>
+
+      <!-- Controls: Voice Output, Photo Projection, Wave, Quiz, API Key -->
+      <div class="interactive-panel rounded-2xl px-3 py-2 flex items-center gap-2">
+        <button id="wave-again-btn" type="button" title="Ask Professor Jashan to wave and greet you"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
+          <span>👋</span>
+          <span class="hidden sm:inline">Wave</span>
+        </button>
+
+        <button id="chai-break-btn" type="button" title="Let Professor Jashan sit in his armchair and sip chai"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
+          <span>☕</span>
+          <span class="hidden sm:inline">Chai Break</span>
+        </button>
+
+        <button id="waveboard-btn" type="button" title="Watch Professor Jashan ride his caster waveboard around the desk"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
+          <span>🛹</span>
+          <span class="hidden sm:inline">Waveboard</span>
+        </button>
+
+        <button id="voice-toggle-btn" type="button" title="Toggle Professor Jashan's Voice & Lip Sync"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-burnt text-offwhite hover:bg-burntDark border border-burnt transition flex items-center gap-1.5 cursor-pointer">
+          <span id="voice-icon">🔊</span>
+          <span class="hidden sm:inline" id="voice-label">Voice On</span>
+        </button>
+
+        <label for="face-photo-input" title="Project a real reference photo onto Professor Jashan's 3D face"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
+          <span>📷</span>
+          <span class="hidden md:inline">Face Photo</span>
+          <input id="face-photo-input" type="file" accept="image/*" class="hidden" />
+        </label>
+
+        <button id="quick-quiz-btn" type="button" title="Ask Professor Jashan for a quick university quiz"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-peach/60 hover:bg-peach text-burntDark border border-burnt/25 transition flex items-center gap-1.5 cursor-pointer">
+          <span>🎓</span>
+          <span class="hidden sm:inline">Quiz Me</span>
+        </button>
+
+        <button id="settings-toggle-btn" type="button" title="Configure Gemini API Key"
+          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
+          <span>⚙️</span>
+          <span class="hidden md:inline">API Key</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Collapsible Gemini API Key Drawer -->
+    <div id="api-drawer" class="hidden w-full max-w-6xl mx-auto mt-2">
+      <div class="interactive-panel rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div class="text-xs text-walnut">
+          <strong class="text-espresso">Gemini API Connection:</strong> Live Gemini AI tutoring is active automatically! Optionally enter your own Google Gemini API key below to override.
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="gemini-api-key" type="password" placeholder="Optional custom key..."
+            class="px-3 py-2 rounded-xl text-xs bg-offwhite border border-beige focus:outline-none focus:border-burnt w-56 text-espresso" />
+          <button id="save-key-btn" type="button"
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-burnt text-offwhite hover:bg-burntDark transition cursor-pointer">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Area: Leaves open space on the left/center for Professor Jashan's world -->
+    <main class="flex-1 flex flex-col md:flex-row items-end justify-end gap-4 w-full max-w-6xl mx-auto my-2 overflow-hidden">
+      <!-- Chat Panel Container (Positioned on the right so Professor Jashan has open desk space to walk, sit on its top ledge, and peek into the input bar) -->
+      <section id="chat-panel" class="interactive-panel rounded-3xl w-full md:w-[440px] lg:w-[470px] h-[54vh] md:h-[70vh] flex flex-col overflow-hidden relative">
+        <!-- Panel Top Ledge Accent (Where Professor Jashan can sit and swing his legs) -->
+        <div class="h-2 w-full bg-gradient-to-r from-burnt via-peach to-burnt shrink-0"></div>
+
+        <!-- Panel Subheader -->
+        <div class="px-5 py-3 border-b border-beige/80 bg-cream/60 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-burntDark">Office Hours Session</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-prompt="Explain Big-O notation with a simple real-world example."
+              class="topic-chip text-[11px] px-2.5 py-1 rounded-full bg-offwhite hover:bg-peach/60 text-walnut border border-beige transition cursor-pointer">
+              Big-O
+            </button>
+            <button type="button" data-prompt="Walk me through recursion in Python step by step."
+              class="topic-chip text-[11px] px-2.5 py-1 rounded-full bg-offwhite hover:bg-peach/60 text-walnut border border-beige transition cursor-pointer">
+              Recursion
+            </button>
+            <button type="button" data-prompt="Give me a quick 1-question multiple choice quiz on Calculus or Data Structures."
+              class="topic-chip text-[11px] px-2.5 py-1 rounded-full bg-offwhite hover:bg-peach/60 text-walnut border border-beige transition cursor-pointer">
+              Quiz
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Feed -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3.5 chat-scroll select-text">
+          <!-- Initial Professor Jashan Welcome Message -->
+          <div class="flex items-start gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-burnt text-offwhite flex items-center justify-center text-xs font-serif font-bold shrink-0 mt-0.5">
+              J
+            </div>
+            <div class="bg-cream border border-beige rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-espresso leading-relaxed shadow-sm max-w-[88%]">
+              <p class="font-medium text-burntDark text-xs mb-1">Professor Jashan Sir</p>
+              <p>Welcome to my study desk! Feel free to ask about algorithms, calculus, programming, or exam revision. Start typing below—I'll come right over to read along.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Message Input Dock (Professor Jashan runs here & peeks over the top rim when you type!) -->
+        <div id="input-dock" class="p-3.5 bg-cream/90 border-t border-beige shrink-0">
+          <form id="chat-form" class="flex items-center gap-2">
+            <input id="chat-input" type="text" autocomplete="off"
+              placeholder="Ask Professor Jashan a question..."
+              class="flex-1 px-4 py-3 rounded-2xl bg-offwhite border border-beige focus:outline-none focus:border-burnt text-sm text-espresso placeholder:text-walnut/50 shadow-inner" />
+            <button id="send-btn" type="submit"
+              class="px-4 py-3 rounded-2xl bg-burnt hover:bg-burntDark active:scale-95 text-offwhite font-semibold text-sm shadow-md transition flex items-center justify-center cursor-pointer">
+              <span>Ask</span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Main Application Script -->
+  <script>
+    // =========================================================================
+    // 1. STATE DEFINITIONS & GREETING LINES
+    // =========================================================================
+    const JashanState = {
+      GREETING: 'GREETING',
+      IDLE_WALK: 'IDLE_WALK',
+      IDLE_OBSERVE: 'IDLE_OBSERVE',
+      IDLE_THINK: 'IDLE_THINK',
+      IDLE_STRETCH: 'IDLE_STRETCH',
+      IDLE_CHECK_WATCH: 'IDLE_CHECK_WATCH',
+      IDLE_SIT_LEDGE: 'IDLE_SIT_LEDGE',
+      IDLE_CHAIR_TEA: 'IDLE_CHAIR_TEA',
+      IDLE_WAVEBOARD: 'IDLE_WAVEBOARD',
+      TYPING_RUN: 'TYPING_RUN',
+      TYPING_PEEK: 'TYPING_PEEK',
+      READING: 'READING',
+      THINKING: 'THINKING',
+      ANSWERING: 'ANSWERING',
+      SUCCESS: 'SUCCESS',
+      ENCOURAGE: 'ENCOURAGE'
+    };
+
+    const RANDOM_GREETING_LINES = [
+      "Sat Sri Akal ji! Welcome to my study desk. Grab a virtual cup of chai—what topic are we cracking today?",
+      "Ki haal hai mere dost! Good to see you! Ask me any coding, math, or exam question—let's make it super easy.",
+      "Hello ji! I was just sipping my masala chai and reviewing notes. Start typing below and I'll run right over!",
+      "Aao ji, welcome to office hours! Whether it's algorithms, calculus, or last-minute exam prep, tension bilkul nahi leni!",
+      "Oye hoye, look who's here! Ready to turn tough syllabus topics into crystal-clear intuition today?"
+    ];
+
+    const CHAI_BREAK_QUOTES = [
+      "Ah, garam masala chai! Best fuel before debugging recursive functions, hai na?",
+      "Thoda rest te ek cup chai... then back to conquering algorithms! Ask whenever you're ready, ji.",
+      "Nothing beats adrak wali chai while watching you code. Take your time, main yahin baitha haan!"
+    ];
+
+    const WAVEBOARD_QUOTES = [
+      "Chak de phatte! Watch how smoothly we carve around Big-O complexity on this waveboard, ji!",
+      "A little waveboard spin between lectures keeps the brain sharp! Need help with any code or math?",
+      "Oye hoye, balance is everything—both on a caster waveboard and in binary search trees, hai na?"
+    ];
+
+    let currentState = JashanState.IDLE_OBSERVE;
+    let stateTimer = 0;
+    let idleActionTimer = 0;
+    let nextIdleSwitch = 5.0;
+    let voiceEnabled = true;
+    let isSpeaking = false;
+    let speechMouthPhase = 0;
+    let typingTimer = null;
+    let lastQuizAnswer = null;
+    let hasEnteredStudyDesk = false;
+    let lastGreetingIndex = -1;
+
+    // Cloud speech typing state
+    let cloudTypewriterInterval = null;
+    let cloudHideTimeout = null;
+
+    // DOM References
+    const canvasBg = document.getElementById('canvas-bg');
+    const canvasFg = document.getElementById('canvas-fg');
+    const welcomeOverlay = document.getElementById('welcome-overlay');
+    const enterStudyBtn = document.getElementById('enter-study-btn');
+    const cloudSpeechEl = document.getElementById('cloud-speech');
+    const cloudSpeechTextEl = document.getElementById('cloud-speech-text');
+    const statusBadgeText = document.getElementById('status-badge-text');
+    const chatPanel = document.getElementById('chat-panel');
+    const inputDock = document.getElementById('input-dock');
+    const chatInput = document.getElementById('chat-input');
+    const chatForm = document.getElementById('chat-form');
+    const chatMessages = document.getElementById('chat-messages');
+    const waveAgainBtn = document.getElementById('wave-again-btn');
+    const chaiBreakBtn = document.getElementById('chai-break-btn');
+    const waveboardBtn = document.getElementById('waveboard-btn');
+    const voiceToggleBtn = document.getElementById('voice-toggle-btn');
+    const voiceIcon = document.getElementById('voice-icon');
+    const voiceLabel = document.getElementById('voice-label');
+    const facePhotoInput = document.getElementById('face-photo-input');
+    const quickQuizBtn = document.getElementById('quick-quiz-btn');
+    const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+    const apiDrawer = document.getElementById('api-drawer');
+    const apiKeyInput = document.getElementById('gemini-api-key');
+    const saveKeyBtn = document.getElementById('save-key-btn');
+
+    // Load saved API key if present
+    try {
+      const savedKey = localStorage.getItem('jashan_gemini_api_key');
+      if (savedKey) apiKeyInput.value = savedKey;
+    } catch (e) {}
+
+    // =========================================================================
+    // 2. CLOUD SPEECH BUBBLE & SPEECH SYNTHESIS
+    // =========================================================================
+    function showCloudSpeech(fullText, durationMs = 6500) {
+      if (cloudTypewriterInterval) {
+        clearInterval(cloudTypewriterInterval);
+        cloudTypewriterInterval = null;
+      }
+      if (cloudHideTimeout) {
+        clearTimeout(cloudHideTimeout);
+        cloudHideTimeout = null;
+      }
+
+      cloudSpeechTextEl.innerHTML = '<span class="typing-caret"></span>';
+      cloudSpeechEl.classList.add('visible');
+
+      let charIndex = 0;
+      const chars = Array.from(fullText);
+      const stepDelay = Math.max(18, Math.min(38, Math.floor(2400 / Math.max(chars.length, 1))));
+
+      cloudTypewriterInterval = setInterval(() => {
+        charIndex++;
+        const currentSlice = chars.slice(0, charIndex).join('');
+        if (charIndex < chars.length) {
+          cloudSpeechTextEl.innerHTML = `${escapeHtml(currentSlice)}<span class="typing-caret"></span>`;
+        } else {
+          cloudSpeechTextEl.textContent = fullText;
+          clearInterval(cloudTypewriterInterval);
+          cloudTypewriterInterval = null;
+        }
+      }, stepDelay);
+
+      cloudHideTimeout = setTimeout(() => {
+        if (!isSpeaking) {
+          cloudSpeechEl.classList.remove('visible');
+        }
+      }, durationMs);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function speakText(text) {
+      const cleanText = text.replace(/[*#`]/g, '').trim();
+      if (!cleanText) return;
+
+      // Always show the cloud speech bubble with live typing
+      const displaySnippet = cleanText.length > 165 ? cleanText.slice(0, 162) + '...' : cleanText;
+      showCloudSpeech(displaySnippet, Math.max(5500, displaySnippet.length * 65));
+
+      if (!voiceEnabled || !('speechSynthesis' in window)) {
+        // Simulate gentle mouth motion during cloud typing even if audio is muted
+        isSpeaking = true;
+        setTimeout(() => { isSpeaking = false; }, Math.min(4500, displaySnippet.length * 45));
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 0.98;
+        utterance.pitch = 0.95;
+
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v =>
+          /en-IN|Indian|Rishi|Daniel|Alex|Google UK English Male/i.test(v.name + ' ' + v.lang)
+        );
+        if (preferred) utterance.voice = preferred;
+
+        utterance.onstart = () => {
+          isSpeaking = true;
+        };
+        utterance.onend = () => {
+          isSpeaking = false;
+          setTimeout(() => {
+            if (!isSpeaking) cloudSpeechEl.classList.remove('visible');
+          }, 2200);
+        };
+        utterance.onerror = () => {
+          isSpeaking = false;
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        isSpeaking = false;
+      }
+    }
+
+    function triggerGreetingWithWave() {
+      let idx = Math.floor(Math.random() * RANDOM_GREETING_LINES.length);
+      if (idx === lastGreetingIndex && RANDOM_GREETING_LINES.length > 1) {
+        idx = (idx + 1) % RANDOM_GREETING_LINES.length;
+      }
+      lastGreetingIndex = idx;
+      const line = RANDOM_GREETING_LINES[idx];
+
+      // Walk slightly forward on the desk and wave
+      jashanController.useForeground = false;
+      jashanController.targetPos.set(-1.35, 0, 1.35);
+      setJashanState(JashanState.GREETING, 'Waving & Greeting You');
+      speakText(line);
+    }
+
+    // =========================================================================
+    // 3. PROCEDURAL PHOTOREALISTIC TEXTURES FOR PROFESSOR JASHAN & DESK
+    // =========================================================================
+    function createSkinTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#C78E68';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Subtle natural skin pore & warmth variation
+      for (let i = 0; i < 4500; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const r = 0.6 + Math.random() * 1.4;
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(155, 98, 66, 0.08)' : 'rgba(225, 178, 144, 0.08)';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      return tex;
+    }
+
+    function createPortraitFaceTextures() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      // Base warm South Asian skin tone matching reference
+      const baseGrad = ctx.createRadialGradient(512, 470, 80, 512, 512, 520);
+      baseGrad.addColorStop(0, '#D49B74');
+      baseGrad.addColorStop(0.55, '#C48860');
+      baseGrad.addColorStop(1, '#A66D49');
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Subtle cheek warmth & nose bridge highlight
+      const cheekGradL = ctx.createRadialGradient(385, 545, 10, 385, 545, 95);
+      cheekGradL.addColorStop(0, 'rgba(186, 104, 78, 0.24)');
+      cheekGradL.addColorStop(1, 'rgba(186, 104, 78, 0)');
+      ctx.fillStyle = cheekGradL;
+      ctx.fillRect(280, 440, 210, 210);
+
+      const cheekGradR = ctx.createRadialGradient(639, 545, 10, 639, 545, 95);
+      cheekGradR.addColorStop(0, 'rgba(186, 104, 78, 0.24)');
+      cheekGradR.addColorStop(1, 'rgba(186, 104, 78, 0)');
+      ctx.fillStyle = cheekGradR;
+      ctx.fillRect(534, 440, 210, 210);
+
+      // Nose highlight & shadow
+      const noseGrad = ctx.createLinearGradient(512, 430, 512, 600);
+      noseGrad.addColorStop(0, 'rgba(235, 192, 158, 0.25)');
+      noseGrad.addColorStop(0.7, 'rgba(235, 192, 158, 0.35)');
+      noseGrad.addColorStop(1, 'rgba(120, 72, 46, 0.28)');
+      ctx.fillStyle = noseGrad;
+      ctx.beginPath();
+      ctx.ellipse(512, 515, 22, 72, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Natural sculpted eyebrows (matching Jashan Sir's distinct brow arch)
+      ctx.fillStyle = '#1D1512';
+      // Left brow
+      ctx.beginPath();
+      ctx.moveTo(340, 422);
+      ctx.quadraticCurveTo(405, 396, 468, 416);
+      ctx.quadraticCurveTo(405, 412, 340, 432);
+      ctx.closePath();
+      ctx.fill();
+      // Right brow
+      ctx.beginPath();
+      ctx.moveTo(684, 422);
+      ctx.quadraticCurveTo(619, 396, 556, 416);
+      ctx.quadraticCurveTo(619, 412, 684, 432);
+      ctx.closePath();
+      ctx.fill();
+
+      // Soft under-eye creases
+      ctx.strokeStyle = 'rgba(115, 68, 44, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(412, 462, 42, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(612, 462, 42, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.stroke();
+
+      // Groomed mustache matching reference photo
+      ctx.fillStyle = 'rgba(28, 20, 17, 0.88)';
+      ctx.beginPath();
+      ctx.moveTo(512, 608);
+      ctx.quadraticCurveTo(475, 604, 444, 628);
+      ctx.quadraticCurveTo(474, 626, 512, 619);
+      ctx.quadraticCurveTo(550, 626, 580, 628);
+      ctx.quadraticCurveTo(549, 604, 512, 608);
+      ctx.closePath();
+      ctx.fill();
+
+      // Natural warm lips
+      ctx.fillStyle = '#9E584B';
+      ctx.beginPath();
+      ctx.moveTo(462, 646);
+      ctx.quadraticCurveTo(512, 635, 562, 646);
+      ctx.quadraticCurveTo(512, 654, 462, 646);
+      ctx.fill();
+
+      ctx.fillStyle = '#B26859';
+      ctx.beginPath();
+      ctx.moveTo(465, 648);
+      ctx.quadraticCurveTo(512, 672, 559, 648);
+      ctx.quadraticCurveTo(512, 656, 465, 648);
+      ctx.fill();
+
+      // Soul patch beneath lower lip
+      ctx.fillStyle = 'rgba(28, 20, 17, 0.85)';
+      ctx.beginPath();
+      ctx.ellipse(512, 680, 14, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Closely trimmed jawline beard shading
+      const beardGrad = ctx.createRadialGradient(512, 640, 130, 512, 670, 260);
+      beardGrad.addColorStop(0, 'rgba(28, 20, 17, 0)');
+      beardGrad.addColorStop(0.68, 'rgba(28, 20, 17, 0.34)');
+      beardGrad.addColorStop(1, 'rgba(28, 20, 17, 0.62)');
+      ctx.fillStyle = beardGrad;
+      ctx.beginPath();
+      ctx.arc(512, 625, 245, 0.08 * Math.PI, 0.92 * Math.PI);
+      ctx.fill();
+
+      // Fine beard hair follicles along chin & jawline
+      ctx.fillStyle = 'rgba(24, 17, 14, 0.55)';
+      for (let i = 0; i < 2400; i++) {
+        const angle = 0.12 * Math.PI + Math.random() * (0.76 * Math.PI);
+        const rad = 165 + Math.random() * 72;
+        const bx = 512 + Math.cos(angle) * rad * 0.92;
+        const by = 595 + Math.sin(angle) * rad * 1.05;
+        if (by > 630 && by < 835) {
+          ctx.fillRect(bx, by, 1.4, 3.2);
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      return tex;
+    }
+
+    function createTurbanFabricTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      // Deep crimson red matching Jashan Sir's turban
+      ctx.fillStyle = '#9E1B24';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Fine woven cotton voile threads
+      ctx.strokeStyle = 'rgba(255, 190, 195, 0.09)';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < 512; y += 3) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(512, y);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(60, 8, 12, 0.14)';
+      for (let x = 0; x < 512; x += 4) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 512);
+        ctx.stroke();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createWoodDeskTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+      grad.addColorStop(0, '#5A3825');
+      grad.addColorStop(0.5, '#4A2D1D');
+      grad.addColorStop(1, '#3B2315');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Organic wood grain lines
+      for (let i = 0; i < 220; i++) {
+        const y = (i / 220) * 1024;
+        ctx.strokeStyle = i % 3 === 0 ? 'rgba(28, 15, 8, 0.25)' : 'rgba(130, 84, 54, 0.14)';
+        ctx.lineWidth = 1.5 + Math.random() * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= 1024; x += 64) {
+          ctx.lineTo(x, y + Math.sin(x * 0.008 + i * 0.2) * 8);
+        }
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      return tex;
+    }
+
+    // =========================================================================
+    // 4. THREE.JS DUAL-CANVAS SCENE & ARTICULATED PROFESSOR JASHAN MODEL
+    // =========================================================================
+    const rendererBg = new THREE.WebGLRenderer({ canvas: canvasBg, antialias: true, alpha: false });
+    rendererBg.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    rendererBg.setSize(window.innerWidth, window.innerHeight);
+    rendererBg.shadowMap.enabled = true;
+    rendererBg.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const rendererFg = new THREE.WebGLRenderer({ canvas: canvasFg, antialias: true, alpha: true });
+    rendererFg.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    rendererFg.setSize(window.innerWidth, window.innerHeight);
+    rendererFg.shadowMap.enabled = true;
+    rendererFg.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const sceneBg = new THREE.Scene();
+    sceneBg.background = new THREE.Color(0x2C1B12);
+    sceneBg.fog = new THREE.FogExp2(0x2C1B12, 0.055);
+
+    const sceneFg = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 60);
+    camera.position.set(0, 2.35, 5.6);
+    camera.lookAt(0, 0.75, 0);
+
+    function setupLights(targetScene) {
+      const hemi = new THREE.HemisphereLight(0xFFF3E2, 0x4A2F20, 0.95);
+      targetScene.add(hemi);
+
+      const keyLight = new THREE.DirectionalLight(0xFFF6EB, 1.35);
+      keyLight.position.set(3.5, 6.2, 4.5);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 1024;
+      keyLight.shadow.mapSize.height = 1024;
+      keyLight.shadow.camera.near = 0.5;
+      keyLight.shadow.camera.far = 20;
+      keyLight.shadow.bias = -0.0005;
+      targetScene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0xF7D6BF, 0.55);
+      rimLight.position.set(-4.0, 3.5, -3.0);
+      targetScene.add(rimLight);
+    }
+
+    setupLights(sceneBg);
+    setupLights(sceneFg);
+
+    // Build University Study Desk Environment in Background Scene
+    const deskGroup = new THREE.Group();
+    const deskTex = createWoodDeskTexture();
+    const deskMat = new THREE.MeshStandardMaterial({
+      map: deskTex,
+      roughness: 0.52,
+      metalness: 0.08
+    });
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 10), deskMat);
+    deskTop.position.set(0, -0.15, 0);
+    deskTop.receiveShadow = true;
+    deskGroup.add(deskTop);
+
+    // Warm Cream Study Blotter Pad on the Left/Center Desk
+    const blotterMat = new THREE.MeshStandardMaterial({
+      color: 0xEAD8C3,
+      roughness: 0.85
+    });
+    const blotter = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 2.9), blotterMat);
+    blotter.position.set(-1.35, 0.012, 0.45);
+    blotter.receiveShadow = true;
+    deskGroup.add(blotter);
+
+    // Stack of Hardcover University Textbooks on Far Left
+    const bookColors = [0x9E420B, 0x2C1B12, 0xC85A17];
+    bookColors.forEach((col, i) => {
+      const book = new THREE.Group();
+      const cover = new THREE.Mesh(
+        new THREE.BoxGeometry(1.35, 0.16, 1.85),
+        new THREE.MeshStandardMaterial({ color: col, roughness: 0.65 })
+      );
+      cover.castShadow = true;
+      cover.receiveShadow = true;
+      const pages = new THREE.Mesh(
+        new THREE.BoxGeometry(1.28, 0.13, 1.78),
+        new THREE.MeshStandardMaterial({ color: 0xFAF3EA, roughness: 0.9 })
+      );
+      pages.position.x = 0.02;
+      book.add(cover, pages);
+      book.position.set(-3.45, 0.08 + i * 0.165, -0.75);
+      book.rotation.y = 0.18 - i * 0.09;
+      deskGroup.add(book);
+    });
+
+    // Brass & Burnt-Orange Desk Pen Holder
+    const cupMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.15, 0.42, 24),
+      new THREE.MeshStandardMaterial({ color: 0xC85A17, roughness: 0.38, metalness: 0.25 })
+    );
+    cupMesh.position.set(-2.55, 0.21, -1.55);
+    cupMesh.castShadow = true;
+    deskGroup.add(cupMesh);
+
+    // Miniature Wooden Professor's Armchair & Side Table with Steaming Chai Cup
+    const CHAIR_POS = new THREE.Vector3(-2.35, 0, 0.35);
+    const CHAIR_YAW = 0.58;
+
+    const chairGroup = new THREE.Group();
+    chairGroup.position.copy(CHAIR_POS);
+    chairGroup.rotation.y = CHAIR_YAW;
+
+    const chairWoodMat = new THREE.MeshStandardMaterial({
+      color: 0x3B2214,
+      roughness: 0.45,
+      metalness: 0.1
+    });
+    const cushionMat = new THREE.MeshStandardMaterial({
+      color: 0xB84A14, // Warm burnt-orange leather cushion
+      roughness: 0.65
+    });
+
+    // Chair seat base & cushion (Seat top sits at y = 0.285 to match Jashan's 0.62 scale seated pelvis)
+    const seatFrame = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.055, 0.52), chairWoodMat);
+    seatFrame.position.set(0, 0.24, 0);
+    seatFrame.castShadow = true;
+    seatFrame.receiveShadow = true;
+    chairGroup.add(seatFrame);
+
+    const seatCushion = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.045, 0.46), cushionMat);
+    seatCushion.position.set(0, 0.275, 0.01);
+    seatCushion.castShadow = true;
+    seatCushion.receiveShadow = true;
+    chairGroup.add(seatCushion);
+
+    // Four turned wooden chair legs
+    [[-0.22, -0.20], [0.22, -0.20], [-0.22, 0.20], [0.22, 0.20]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.018, 0.24, 12), chairWoodMat);
+      leg.position.set(lx, 0.12, lz);
+      leg.castShadow = true;
+      chairGroup.add(leg);
+    });
+
+    // Slatted backrest & cushion
+    const backPostL = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.52, 0.042), chairWoodMat);
+    backPostL.position.set(-0.24, 0.50, -0.23);
+    backPostL.rotation.x = -0.10;
+    backPostL.castShadow = true;
+
+    const backPostR = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.52, 0.042), chairWoodMat);
+    backPostR.position.set(0.24, 0.50, -0.23);
+    backPostR.rotation.x = -0.10;
+    backPostR.castShadow = true;
+
+    const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.065, 0.045), chairWoodMat);
+    topRail.position.set(0, 0.74, -0.255);
+    topRail.castShadow = true;
+
+    const backCushion = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.34, 0.045), cushionMat);
+    backCushion.position.set(0, 0.50, -0.215);
+    backCushion.rotation.x = -0.10;
+    backCushion.castShadow = true;
+    chairGroup.add(backPostL, backPostR, topRail, backCushion);
+
+    // Armrests
+    [-0.25, 0.25].forEach(ax => {
+      const armSupport = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 10), chairWoodMat);
+      armSupport.position.set(ax, 0.34, 0.18);
+      const armRest = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.032, 0.44), chairWoodMat);
+      armRest.position.set(ax, 0.43, -0.02);
+      armRest.castShadow = true;
+      chairGroup.add(armSupport, armRest);
+    });
+
+    deskGroup.add(chairGroup);
+
+    // Miniature Round Wooden Tea Side-Table + Saucer + Steaming Chai Cup
+    const TABLE_POS = new THREE.Vector3(-1.82, 0, 0.62);
+    const teaTableGroup = new THREE.Group();
+    teaTableGroup.position.copy(TABLE_POS);
+
+    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.028, 24), chairWoodMat);
+    tableTop.position.y = 0.26;
+    tableTop.castShadow = true;
+    tableTop.receiveShadow = true;
+
+    const tablePillar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.035, 0.25, 16), chairWoodMat);
+    tablePillar.position.y = 0.13;
+    tablePillar.castShadow = true;
+
+    const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.024, 20), chairWoodMat);
+    tableBase.position.y = 0.012;
+    teaTableGroup.add(tableTop, tablePillar, tableBase);
+
+    // Ceramic Saucer & Chai Cup (movable so Jashan can lift it to sip!)
+    const saucer = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.075, 0.052, 0.012, 20),
+      new THREE.MeshStandardMaterial({ color: 0xFAF3EA, roughness: 0.25 })
+    );
+    saucer.position.set(0, 0.28, 0);
+    teaTableGroup.add(saucer);
+
+    const chaiCupGroup = new THREE.Group();
+    const cupRestingPos = new THREE.Vector3(TABLE_POS.x, 0.315, TABLE_POS.z);
+    chaiCupGroup.position.copy(cupRestingPos);
+
+    const cupBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.044, 0.034, 0.062, 20),
+      new THREE.MeshStandardMaterial({ color: 0xFDFBF7, roughness: 0.22 })
+    );
+    cupBody.castShadow = true;
+
+    const teaLiquid = new THREE.Mesh(
+      new THREE.CircleGeometry(0.039, 18),
+      new THREE.MeshStandardMaterial({ color: 0x9C5A2B, roughness: 0.15 }) // Rich milky masala chai color
+    );
+    teaLiquid.rotation.x = -Math.PI / 2;
+    teaLiquid.position.y = 0.025;
+
+    const cupHandle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.022, 0.005, 8, 16, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xFDFBF7, roughness: 0.22 })
+    );
+    cupHandle.rotation.z = -Math.PI / 2;
+    cupHandle.position.set(0.042, 0, 0);
+
+    chaiCupGroup.add(cupBody, teaLiquid, cupHandle);
+
+    // Delicate Rising Steam Wisps above Chai
+    const steamPuffs = [];
+    const steamMat = new THREE.MeshBasicMaterial({
+      color: 0xFFF8F0,
+      transparent: true,
+      opacity: 0.35
+    });
+    for (let s = 0; s < 3; s++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 10), steamMat.clone());
+      puff.position.set(0, 0.045 + s * 0.025, 0);
+      chaiCupGroup.add(puff);
+      steamPuffs.push(puff);
+    }
+
+    sceneBg.add(teaTableGroup);
+    sceneBg.add(chaiCupGroup);
+
+    // =========================================================================
+    // MINIATURE CASTER WAVEBOARD (Dual-Deck + Torsion Bar + Caster Wheels)
+    // =========================================================================
+    const WAVEBOARD_PARK_POS = new THREE.Vector3(-0.65, 0, 1.72);
+    const WAVEBOARD_PARK_YAW = -0.35;
+
+    function buildWaveboard() {
+      const boardRoot = new THREE.Group();
+      boardRoot.position.copy(WAVEBOARD_PARK_POS);
+      boardRoot.rotation.y = WAVEBOARD_PARK_YAW;
+
+      const deckMat = new THREE.MeshStandardMaterial({
+        color: 0xC85A17, // Burnt orange university deck
+        roughness: 0.42,
+        metalness: 0.15
+      });
+      const gripMat = new THREE.MeshStandardMaterial({
+        color: 0x1D1A18, // Textured black grip tape
+        roughness: 0.92
+      });
+      const metalMat = new THREE.MeshStandardMaterial({
+        color: 0xB8C0C8,
+        roughness: 0.25,
+        metalness: 0.85
+      });
+      const wheelMat = new THREE.MeshStandardMaterial({
+        color: 0xFAF3EA, // Cream urethane caster wheels
+        roughness: 0.35
+      });
+
+      // Center Torsion Bar connecting front and rear decks
+      const torsionBar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.014, 0.014, 0.14, 14),
+        metalMat
+      );
+      torsionBar.rotation.z = Math.PI / 2;
+      torsionBar.position.y = 0.042;
+      torsionBar.castShadow = true;
+      boardRoot.add(torsionBar);
+
+      function createDeck(xOffset) {
+        const deckPivot = new THREE.Group();
+        deckPivot.position.set(xOffset, 0.045, 0);
+
+        // Concave rounded platform
+        const platform = new THREE.Mesh(new THREE.BoxGeometry(0.175, 0.014, 0.115), deckMat);
+        platform.castShadow = true;
+        platform.receiveShadow = true;
+
+        const noseTip = new THREE.Mesh(new THREE.CylinderGeometry(0.057, 0.057, 0.014, 18), deckMat);
+        noseTip.position.x = xOffset > 0 ? 0.085 : -0.085;
+        noseTip.castShadow = true;
+
+        // Grip tape pad
+        const gripPad = new THREE.Mesh(new THREE.BoxGeometry(0.155, 0.004, 0.095), gripMat);
+        gripPad.position.y = 0.008;
+
+        // Angled Caster Fork & Spinning Wheel underneath
+        const casterFork = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.022, 12), metalMat);
+        casterFork.position.y = -0.014;
+        casterFork.rotation.z = xOffset > 0 ? -0.25 : 0.25;
+
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.014, 18), wheelMat);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(xOffset > 0 ? -0.006 : 0.006, -0.024, 0);
+        wheel.castShadow = true;
+
+        deckPivot.add(platform, noseTip, gripPad, casterFork, wheel);
+        return { deckPivot, wheel };
+      }
+
+      const frontDeck = createDeck(0.135);
+      const rearDeck = createDeck(-0.135);
+      boardRoot.add(frontDeck.deckPivot, rearDeck.deckPivot);
+
+      return {
+        root: boardRoot,
+        frontDeck: frontDeck.deckPivot,
+        rearDeck: rearDeck.deckPivot,
+        frontWheel: frontDeck.wheel,
+        rearWheel: rearDeck.wheel
+      };
+    }
+
+    const waveboard = buildWaveboard();
+    sceneBg.add(waveboard.root);
+
+    sceneBg.add(deskGroup);
+
+    // =========================================================================
+    // 5. SCULPTED 3D PROFESSOR JASHAN SIR RIG
+    // =========================================================================
+    const skinTex = createSkinTexture();
+    const portraitFaceTex = createPortraitFaceTextures();
+    const turbanTex = createTurbanFabricTexture();
+
+    const skinMat = new THREE.MeshStandardMaterial({
+      map: skinTex,
+      roughness: 0.56,
+      metalness: 0.02
+    });
+
+    const faceMat = new THREE.MeshStandardMaterial({
+      map: portraitFaceTex,
+      roughness: 0.54,
+      metalness: 0.02
+    });
+
+    const turbanMat = new THREE.MeshStandardMaterial({
+      map: turbanTex,
+      roughness: 0.78,
+      metalness: 0.04
+    });
+
+    const poloMat = new THREE.MeshStandardMaterial({
+      color: 0x3B261C, // Espresso brown collared polo matching reference
+      roughness: 0.76
+    });
+
+    const trousersMat = new THREE.MeshStandardMaterial({
+      color: 0x1E2024,
+      roughness: 0.82
+    });
+
+    const shoeMat = new THREE.MeshStandardMaterial({
+      color: 0x141416,
+      roughness: 0.35,
+      metalness: 0.15
+    });
+
+    function buildProfessorJashan() {
+      const root = new THREE.Group();
+
+      // Pelvis / Hips Pivot (Ground contact at y = 0)
+      const pelvis = new THREE.Group();
+      pelvis.position.set(0, 0.88, 0);
+      root.add(pelvis);
+
+      const hipMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.135, 0.16, 20), trousersMat);
+      hipMesh.castShadow = true;
+      pelvis.add(hipMesh);
+
+      // Torso Pivot
+      const torso = new THREE.Group();
+      torso.position.set(0, 0.08, 0);
+      pelvis.add(torso);
+
+      const chestMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.145, 0.44, 24), poloMat);
+      chestMesh.position.y = 0.22;
+      chestMesh.castShadow = true;
+      torso.add(chestMesh);
+
+      // Polo Collar & Button Placket
+      const collar = new THREE.Mesh(
+        new THREE.TorusGeometry(0.088, 0.022, 12, 24),
+        new THREE.MeshStandardMaterial({ color: 0x2F1D15, roughness: 0.8 })
+      );
+      collar.rotation.x = Math.PI * 0.52;
+      collar.position.set(0, 0.445, 0.01);
+      torso.add(collar);
+
+      const placket = new THREE.Mesh(
+        new THREE.BoxGeometry(0.036, 0.14, 0.015),
+        new THREE.MeshStandardMaterial({ color: 0x2F1D15, roughness: 0.8 })
+      );
+      placket.position.set(0, 0.37, 0.165);
+      torso.add(placket);
+
+      // Chest pocket & subtle university emblem
+      const pocket = new THREE.Mesh(
+        new THREE.BoxGeometry(0.065, 0.072, 0.012),
+        new THREE.MeshStandardMaterial({ color: 0x321F16, roughness: 0.8 })
+      );
+      pocket.position.set(0.085, 0.31, 0.162);
+      torso.add(pocket);
+
+      // Neck & Head Pivot
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.072, 0.11, 18), skinMat);
+      neck.position.set(0, 0.48, 0.005);
+      torso.add(neck);
+
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.62, 0.01);
+      torso.add(headGroup);
+
+      // Sculpted Cranium & Jawline Geometry
+      const headGeo = new THREE.SphereGeometry(0.165, 48, 48);
+      const posAttr = headGeo.attributes.position;
+      for (let i = 0; i < posAttr.count; i++) {
+        let vx = posAttr.getX(i);
+        let vy = posAttr.getY(i);
+        let vz = posAttr.getZ(i);
+
+        // Taper lower jaw & chin into natural human oval
+        if (vy < 0) {
+          const factor = Math.abs(vy) / 0.165;
+          vx *= 1.0 - factor * 0.24;
+          vz *= 1.0 - factor * 0.14;
+          if (vz > 0 && factor > 0.45) {
+            vz += 0.012 * (factor - 0.45); // Subtle chin projection
+          }
+        }
+        // Subtle cheekbone width
+        if (vy > -0.04 && vy < 0.03 && vz > 0) {
+          vx *= 1.03;
+        }
+        posAttr.setXYZ(i, vx, vy, vz);
+      }
+      headGeo.computeVertexNormals();
+
+      const headMesh = new THREE.Mesh(headGeo, faceMat);
+      // Rotate Y by -Math.PI/2 so front of sphere UV aligns with +Z
+      headMesh.rotation.y = -Math.PI / 2;
+      headMesh.castShadow = true;
+      headGroup.add(headMesh);
+
+      // Sculpted 3D Nose Bridge & Tip
+      const noseMesh = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.062, 16), skinMat);
+      noseMesh.position.set(0, -0.005, 0.166);
+      noseMesh.rotation.x = 0.22;
+      headGroup.add(noseMesh);
+
+      // Ears
+      [-1, 1].forEach(side => {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.026, 14, 14), skinMat);
+        ear.scale.set(0.45, 1.15, 0.7);
+        ear.position.set(side * 0.162, -0.01, -0.01);
+        headGroup.add(ear);
+      });
+
+      // Expressive Eyes with Pupils & Eyelids
+      const leftEye = new THREE.Group();
+      const rightEye = new THREE.Group();
+      const scleraMat = new THREE.MeshStandardMaterial({ color: 0xFAF7F2, roughness: 0.2 });
+      const irisMat = new THREE.MeshStandardMaterial({ color: 0x261710, roughness: 0.15 });
+
+      [leftEye, rightEye].forEach((eyeGrp, idx) => {
+        const side = idx === 0 ? -1 : 1;
+        eyeGrp.position.set(side * 0.056, 0.022, 0.146);
+        const sclera = new THREE.Mesh(new THREE.SphereGeometry(0.021, 18, 18), scleraMat);
+        const iris = new THREE.Mesh(new THREE.SphereGeometry(0.011, 16, 16), irisMat);
+        iris.position.z = 0.015;
+        eyeGrp.add(sclera, iris);
+        headGroup.add(eyeGrp);
+      });
+
+      // Animated Jaw/Mouth Mesh for Lip Sync
+      const jawMouth = new THREE.Mesh(
+        new THREE.SphereGeometry(0.024, 16, 12),
+        new THREE.MeshStandardMaterial({ color: 0x6B2D26, roughness: 0.7 })
+      );
+      jawMouth.scale.set(1.25, 0.22, 0.65);
+      jawMouth.position.set(0, -0.068, 0.153);
+      headGroup.add(jawMouth);
+
+      // Signature Translucent Silver-Grey Rounded-Rectangular Double-Bridge Eyeglasses
+      const glassesGroup = new THREE.Group();
+      glassesGroup.position.set(0, 0.022, 0.168);
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0xB8BDC4,
+        roughness: 0.25,
+        metalness: 0.65
+      });
+      const lensMat = new THREE.MeshPhysicalMaterial({
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.08,
+        metalness: 0.05
+      });
+
+      [-1, 1].forEach(side => {
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.0038, 10, 28), frameMat);
+        rim.scale.set(1.18, 0.88, 1);
+        rim.position.set(side * 0.057, 0, 0);
+        glassesGroup.add(rim);
+
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.037, 24), lensMat);
+        lens.scale.set(1.18, 0.88, 1);
+        lens.position.set(side * 0.057, 0, -0.001);
+        glassesGroup.add(lens);
+
+        // Temple arms
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.004, 0.165), frameMat);
+        arm.position.set(side * 0.102, 0.004, -0.082);
+        glassesGroup.add(arm);
+      });
+
+      // Double bridge
+      const bridgeLower = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.0035, 0.004), frameMat);
+      bridgeLower.position.set(0, 0.004, 0.002);
+      const bridgeUpper = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.003, 0.004), frameMat);
+      bridgeUpper.position.set(0, 0.022, 0.002);
+      glassesGroup.add(bridgeLower, bridgeUpper);
+      headGroup.add(glassesGroup);
+
+      // Signature Crimson Sikh Turban (Dastar) with Overlapping Folds & Black Under-Patka Peak
+      const turbanGroup = new THREE.Group();
+      turbanGroup.position.set(0, 0.085, -0.008);
+      headGroup.add(turbanGroup);
+
+      // Black under-patka triangle peak on forehead
+      const patkaPeak = new THREE.Mesh(
+        new THREE.SphereGeometry(0.152, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.85 })
+      );
+      patkaPeak.position.set(0, -0.012, 0.018);
+      turbanGroup.add(patkaPeak);
+
+      // Main turban crown
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.192, 32, 32), turbanMat);
+      crown.scale.set(1.04, 1.08, 1.08);
+      crown.position.set(0, 0.032, -0.005);
+      crown.castShadow = true;
+      turbanGroup.add(crown);
+
+      // Layered criss-cross dastar fabric folds (Larhs)
+      for (let i = 0; i < 4; i++) {
+        const foldL = new THREE.Mesh(new THREE.TorusGeometry(0.175 - i * 0.006, 0.028, 14, 32), turbanMat);
+        foldL.position.set(-0.018, 0.01 + i * 0.024, 0.012);
+        foldL.rotation.set(0.45 + i * 0.06, -0.25, 0.48);
+        foldL.castShadow = true;
+        turbanGroup.add(foldL);
+
+        const foldR = new THREE.Mesh(new THREE.TorusGeometry(0.175 - i * 0.006, 0.028, 14, 32), turbanMat);
+        foldR.position.set(0.018, 0.01 + i * 0.024, 0.012);
+        foldR.rotation.set(0.45 + i * 0.06, 0.25, -0.48);
+        foldR.castShadow = true;
+        turbanGroup.add(foldR);
+      }
+
+      // Articulated Arms (Shoulder -> Upper Arm -> Elbow -> Forearm -> Hand)
+      function createArm(side) {
+        const shoulder = new THREE.Group();
+        shoulder.position.set(side * 0.205, 0.39, 0);
+
+        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.052, 0.14, 16), poloMat);
+        sleeve.position.y = -0.06;
+        sleeve.castShadow = true;
+        shoulder.add(sleeve);
+
+        const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.039, 0.22, 16), skinMat);
+        upperArm.position.y = -0.14;
+        upperArm.castShadow = true;
+        shoulder.add(upperArm);
+
+        const elbow = new THREE.Group();
+        elbow.position.set(0, -0.25, 0);
+        shoulder.add(elbow);
+
+        const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.031, 0.22, 16), skinMat);
+        forearm.position.y = -0.11;
+        forearm.castShadow = true;
+        elbow.add(forearm);
+
+        // Silver Sikh Kara bangle on right wrist (side === -1 in Three.js viewer perspective)
+        if (side === -1) {
+          const kara = new THREE.Mesh(
+            new THREE.TorusGeometry(0.035, 0.0045, 10, 24),
+            new THREE.MeshStandardMaterial({ color: 0xD8DEE6, metalness: 0.88, roughness: 0.18 })
+          );
+          kara.rotation.x = Math.PI / 2;
+          kara.position.y = -0.205;
+          elbow.add(kara);
+        } else {
+          // Classic wristwatch on left wrist
+          const strap = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.035, 0.035, 0.022, 18),
+            new THREE.MeshStandardMaterial({ color: 0x241710, roughness: 0.7 })
+          );
+          strap.position.y = -0.20;
+          elbow.add(strap);
+        }
+
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.036, 14, 14), skinMat);
+        hand.scale.set(0.85, 1.2, 0.65);
+        hand.position.y = -0.24;
+        elbow.add(hand);
+
+        return { shoulder, elbow, hand };
+      }
+
+      const rightArm = createArm(-1); // Character's right arm (viewer's left when facing camera)
+      const leftArm = createArm(1);   // Character's left arm
+      torso.add(rightArm.shoulder, leftArm.shoulder);
+
+      // Articulated Legs (Hip -> Thigh -> Knee -> Shin -> Shoe)
+      function createLeg(side) {
+        const hip = new THREE.Group();
+        hip.position.set(side * 0.082, -0.05, 0);
+
+        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.056, 0.40, 16), trousersMat);
+        thigh.position.y = -0.20;
+        thigh.castShadow = true;
+        hip.add(thigh);
+
+        const knee = new THREE.Group();
+        knee.position.set(0, -0.40, 0);
+        hip.add(knee);
+
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.044, 0.38, 16), trousersMat);
+        shin.position.y = -0.19;
+        shin.castShadow = true;
+        knee.add(shin);
+
+        const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.058, 0.195), shoeMat);
+        shoe.position.set(0, -0.39, 0.045);
+        shoe.castShadow = true;
+        knee.add(shoe);
+
+        return { hip, knee };
+      }
+
+      const rightLeg = createLeg(-1);
+      const leftLeg = createLeg(1);
+      pelvis.add(rightLeg.hip, leftLeg.hip);
+
+      // Miniature scale so Professor Jashan feels like a real tiny human living on the desk
+      root.scale.setScalar(0.62);
+
+      return {
+        root,
+        pelvis,
+        torso,
+        headGroup,
+        headMesh,
+        leftEye,
+        rightEye,
+        jawMouth,
+        rightArm,
+        leftArm,
+        rightLeg,
+        leftLeg
+      };
+    }
+
+    const jashanRig = buildProfessorJashan();
+    sceneBg.add(jashanRig.root);
+
+    // =========================================================================
+    // 6. MOVEMENT, DOM SURFACE ALIGNMENT & CHOREOGRAPHY CONTROLLER
+    // =========================================================================
+    const jashanController = {
+      pos: new THREE.Vector3(-1.4, 0, 1.1),
+      targetPos: new THREE.Vector3(-1.4, 0, 1.1),
+      rotY: 0.25,
+      targetRotY: 0.25,
+      speed: 0,
+      walkCycle: 0,
+      useForeground: false
+    };
+
+    function screenToDeskWorld(clientX, clientY, planeY = 0) {
+      const ndcX = (clientX / window.innerWidth) * 2 - 1;
+      const ndcY = -(clientY / window.innerHeight) * 2 + 1;
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -planeY);
+      const hit = new THREE.Vector3();
+      raycaster.ray.intersectPlane(plane, hit);
+      return hit;
+    }
+
+    function setJashanState(newState, labelText = '') {
+      currentState = newState;
+      stateTimer = 0;
+      if (labelText && statusBadgeText) {
+        statusBadgeText.textContent = labelText;
+      }
+
+      if (newState === JashanState.TYPING_RUN || newState === JashanState.TYPING_PEEK) {
+        const rect = inputDock.getBoundingClientRect();
+        const peekScreenX = rect.left + Math.min(rect.width * 0.28, 125);
+        const peekScreenY = rect.top + 8;
+        const worldAnchor = screenToDeskWorld(peekScreenX, peekScreenY, 0.12);
+        if (worldAnchor) {
+          jashanController.targetPos.set(
+            THREE.MathUtils.clamp(worldAnchor.x, -2.6, 2.6),
+            0.12,
+            THREE.MathUtils.clamp(worldAnchor.z, -1.6, 2.5)
+          );
+        }
+        jashanController.useForeground = true;
+      } else if (newState === JashanState.IDLE_SIT_LEDGE) {
+        const rect = chatPanel.getBoundingClientRect();
+        const sitScreenX = rect.left + 72;
+        const sitScreenY = rect.top + 8;
+        const worldAnchor = screenToDeskWorld(sitScreenX, sitScreenY, 0.65);
+        if (worldAnchor) {
+          jashanController.targetPos.set(
+            THREE.MathUtils.clamp(worldAnchor.x, -2.4, 2.5),
+            0.65,
+            THREE.MathUtils.clamp(worldAnchor.z, -1.6, 2.2)
+          );
+        }
+        jashanController.useForeground = true;
+      } else if (newState === JashanState.IDLE_CHAIR_TEA) {
+        jashanController.useForeground = false;
+        // Walk to armchair position
+        jashanController.targetPos.set(CHAIR_POS.x + 0.03, 0, CHAIR_POS.z + 0.04);
+      } else if (newState === JashanState.IDLE_WAVEBOARD) {
+        jashanController.useForeground = false;
+        // Step onto waveboard and begin carving figure-eight / oval laps around the desk
+        jashanController.targetPos.set(waveboard.root.position.x, 0.056, waveboard.root.position.z);
+      } else if (
+        newState === JashanState.READING ||
+        newState === JashanState.THINKING ||
+        newState === JashanState.ANSWERING ||
+        newState === JashanState.SUCCESS ||
+        newState === JashanState.ENCOURAGE
+      ) {
+        jashanController.useForeground = false;
+        const rect = chatPanel.getBoundingClientRect();
+        const besideX = Math.max(85, rect.left - 75);
+        const besideY = rect.top + rect.height * 0.58;
+        const worldAnchor = screenToDeskWorld(besideX, besideY, 0);
+        if (worldAnchor) {
+          jashanController.targetPos.set(
+            THREE.MathUtils.clamp(worldAnchor.x, -2.5, 0.3),
+            0,
+            THREE.MathUtils.clamp(worldAnchor.z, -1.2, 2.1)
+          );
+        }
+      } else if (newState === JashanState.IDLE_WALK) {
+        jashanController.useForeground = false;
+        const randX = -2.4 + Math.random() * 2.2;
+        const randZ = -0.6 + Math.random() * 2.5;
+        jashanController.targetPos.set(randX, 0, randZ);
+      } else {
+        jashanController.useForeground = false;
+        jashanController.targetPos.y = 0;
+      }
+    }
+
+    function pickRandomIdleActivity() {
+      const choices = [
+        { state: JashanState.IDLE_WALK, label: 'Strolling Across Desk' },
+        { state: JashanState.IDLE_OBSERVE, label: 'Observing Study Room' },
+        { state: JashanState.IDLE_THINK, label: 'Pondering Lecture Notes' },
+        { state: JashanState.IDLE_STRETCH, label: 'Taking a Brief Stretch' },
+        { state: JashanState.IDLE_CHECK_WATCH, label: 'Checking Office Hours' },
+        { state: JashanState.IDLE_WAVEBOARD, label: 'Carving on His Waveboard' },
+        { state: JashanState.IDLE_WAVEBOARD, label: 'Riding Caster Waveboard' },
+        { state: JashanState.IDLE_CHAIR_TEA, label: 'Sipping Masala Chai in Armchair' },
+        { state: JashanState.IDLE_SIT_LEDGE, label: 'Seated on Panel Ledge' }
+      ];
+      const filtered = choices.filter(c => c.state !== currentState);
+      const chosen = filtered[Math.floor(Math.random() * filtered.length)];
+      setJashanState(chosen.state, chosen.label);
+      nextIdleSwitch = (chosen.state === JashanState.IDLE_CHAIR_TEA || chosen.state === JashanState.IDLE_WAVEBOARD)
+        ? 8.5 + Math.random() * 4.0
+        : 5.5 + Math.random() * 4.5;
+    }
+
+    function updateCloudBubblePosition() {
+      if (!cloudSpeechEl.classList.contains('visible')) return;
+      const headWorldPos = new THREE.Vector3();
+      jashanRig.headGroup.getWorldPosition(headWorldPos);
+      headWorldPos.y += 0.25; // Just above top of his crimson turban
+
+      const projected = headWorldPos.project(camera);
+      const screenX = (projected.x * 0.5 + 0.5) * window.innerWidth;
+      const screenY = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+
+      const clampedX = THREE.MathUtils.clamp(screenX, 155, window.innerWidth - 155);
+      const clampedY = THREE.MathUtils.clamp(screenY, 115, window.innerHeight - 95);
+
+      cloudSpeechEl.style.left = `${clampedX}px`;
+      cloudSpeechEl.style.top = `${clampedY}px`;
+    }
+
+    function updateProfessorAnimation(dt, elapsed) {
+      stateTimer += dt;
+
+      // Ensure character lives in the active depth layer
+      const desiredParent = jashanController.useForeground ? sceneFg : sceneBg;
+      if (jashanRig.root.parent !== desiredParent) {
+        desiredParent.add(jashanRig.root);
+      }
+
+      // Compute horizontal movement toward targetPos
+      let isRidingWaveboard = false;
+      if (currentState === JashanState.IDLE_WAVEBOARD) {
+        // Smooth S-curve oval carving path across the open study desk
+        const rideT = elapsed * 0.92;
+        const carveX = -1.25 + Math.cos(rideT) * 1.15;
+        const carveZ = 0.85 + Math.sin(rideT * 2.0) * 0.68;
+        jashanController.targetPos.set(carveX, 0.056, carveZ);
+      }
+
+      const dx = jashanController.targetPos.x - jashanController.pos.x;
+      const dz = jashanController.targetPos.z - jashanController.pos.z;
+      const dist = Math.hypot(dx, dz);
+
+      if (currentState === JashanState.IDLE_WAVEBOARD && dist < 0.35) {
+        isRidingWaveboard = true;
+      }
+
+      const isRunning = currentState === JashanState.TYPING_RUN;
+      const maxSpeed = isRidingWaveboard ? 1.55 : (isRunning ? 2.55 : 1.05);
+
+      if (dist > 0.045) {
+        const accel = isRunning ? 7.5 : 4.5;
+        jashanController.speed = THREE.MathUtils.lerp(jashanController.speed, maxSpeed, dt * accel);
+        const step = Math.min(dist, jashanController.speed * dt);
+        jashanController.pos.x += (dx / dist) * step;
+        jashanController.pos.z += (dz / dist) * step;
+        // Sideways stance when riding waveboard vs forward facing when walking/running
+        const travelYaw = Math.atan2(dx, dz);
+        jashanController.targetRotY = isRidingWaveboard ? travelYaw - Math.PI * 0.42 : travelYaw;
+      } else {
+        jashanController.speed = THREE.MathUtils.lerp(jashanController.speed, 0, dt * 8.0);
+        if (currentState === JashanState.TYPING_RUN) {
+          setJashanState(JashanState.TYPING_PEEK, 'Reading Your Question...');
+        } else if (currentState === JashanState.IDLE_WALK) {
+          setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+        }
+
+        // Face user or chat panel when stationary
+        if (currentState === JashanState.TYPING_PEEK) {
+          jashanController.targetRotY = 0.45;
+        } else if (currentState === JashanState.IDLE_CHAIR_TEA) {
+          jashanController.targetRotY = CHAIR_YAW;
+        } else if (
+          currentState === JashanState.READING ||
+          currentState === JashanState.ANSWERING
+        ) {
+          jashanController.targetRotY = 0.72;
+        } else {
+          jashanController.targetRotY = 0.12;
+        }
+      }
+
+      // Smooth vertical interpolation
+      jashanController.pos.y = THREE.MathUtils.lerp(
+        jashanController.pos.y,
+        jashanController.targetPos.y,
+        dt * 6.5
+      );
+
+      // Smooth yaw rotation with natural body bank
+      let angleDiff = jashanController.targetRotY - jashanController.rotY;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      jashanController.rotY += angleDiff * Math.min(1, dt * 7.5);
+
+      jashanRig.root.position.copy(jashanController.pos);
+      jashanRig.root.rotation.y = jashanController.rotY;
+
+      // Reset default joint targets before blending state poses
+      let pelvisY = 0.88;
+      let torsoPitch = 0.03;
+      let torsoRoll = -angleDiff * 0.12;
+      let torsoYaw = 0;
+      let headPitch = 0.02;
+      let headYaw = 0;
+      let headRoll = 0;
+
+      let rShoulderX = 0.08, rShoulderZ = -0.08, rElbowX = -0.18;
+      let lShoulderX = 0.08, lShoulderZ = 0.08, lElbowX = -0.18;
+      let rHipX = 0, rKneeX = 0;
+      let lHipX = 0, lKneeX = 0;
+
+      // Locomotion cycle when moving
+      if (isRidingWaveboard) {
+        // Authentic waveboard stance: knees bent, wide athletic footing, arms outstretched for balance, deck twisting
+        const wiggle = Math.sin(elapsed * 7.2);
+        pelvisY = 0.82 + Math.abs(wiggle) * 0.015;
+        torsoPitch = 0.12;
+        torsoRoll = wiggle * 0.11;
+        torsoYaw = 0.35;
+        headYaw = 0.38;
+        headPitch = 0.04;
+
+        // Wide stance on front & rear decks
+        rHipX = -0.22;
+        lHipX = 0.24;
+        rKneeX = 0.34;
+        lKneeX = 0.34;
+
+        // Surfer/carver balance arms
+        rShoulderX = -0.25;
+        rShoulderZ = -0.68 + wiggle * 0.14;
+        rElbowX = -0.35;
+        lShoulderX = 0.25;
+        lShoulderZ = 0.68 - wiggle * 0.14;
+        lElbowX = -0.35;
+
+        // Align waveboard directly beneath Professor Jashan's feet and twist front/rear decks
+        const travelYaw = Math.atan2(dx, dz);
+        waveboard.root.position.set(jashanController.pos.x, 0, jashanController.pos.z);
+        waveboard.root.rotation.y = travelYaw - Math.PI / 2;
+        waveboard.frontDeck.rotation.x = wiggle * 0.24;
+        waveboard.rearDeck.rotation.x = -wiggle * 0.24;
+        waveboard.frontWheel.rotation.y += dt * 14;
+        waveboard.rearWheel.rotation.y += dt * 14;
+      } else if (jashanController.speed > 0.08) {
+        const freq = isRunning ? 13.5 : 7.5;
+        jashanController.walkCycle += dt * freq;
+        const s = Math.sin(jashanController.walkCycle);
+        const c = Math.cos(jashanController.walkCycle);
+        const amp = isRunning ? 0.78 : 0.46;
+
+        rHipX = s * amp;
+        lHipX = -s * amp;
+        rKneeX = Math.max(0, -c) * (isRunning ? 0.95 : 0.55);
+        lKneeX = Math.max(0, c) * (isRunning ? 0.95 : 0.55);
+
+        rShoulderX = -s * amp * 0.75;
+        lShoulderX = s * amp * 0.75;
+        rElbowX = isRunning ? -0.85 : -0.35;
+        lElbowX = isRunning ? -0.85 : -0.35;
+
+        pelvisY = 0.88 + Math.abs(c) * (isRunning ? 0.032 : 0.016);
+        torsoPitch = isRunning ? 0.18 : 0.07;
+      } else {
+        // Stationary Expressive State Poses
+        const breathe = Math.sin(elapsed * 2.1);
+        pelvisY = 0.88 + breathe * 0.006;
+
+        switch (currentState) {
+          case JashanState.GREETING: {
+            // Warm wave with right hand raised
+            rShoulderX = -2.35;
+            rShoulderZ = -0.38;
+            rElbowX = -0.55 + Math.sin(elapsed * 8.5) * 0.35;
+            lShoulderX = 0.1;
+            lElbowX = -0.22;
+            headRoll = 0.07;
+            headPitch = -0.03;
+            if (stateTimer > 5.2) {
+              setJashanState(JashanState.IDLE_OBSERVE, 'Observing Study Room');
+            }
+            break;
+          }
+
+          case JashanState.TYPING_PEEK: {
+            // Leaning forward over input box rim, hands gripping ledge, head tilted reading
+            torsoPitch = 0.34;
+            headPitch = 0.28;
+            headRoll = Math.sin(elapsed * 2.4) * 0.09;
+            headYaw = Math.sin(elapsed * 3.1) * 0.12;
+            rShoulderX = -0.85;
+            rElbowX = -0.55;
+            lShoulderX = -0.85;
+            lElbowX = -0.55;
+            break;
+          }
+
+          case JashanState.READING: {
+            torsoPitch = 0.08;
+            headPitch = 0.12;
+            headYaw = 0.18 + Math.sin(elapsed * 3.5) * 0.06;
+            rShoulderX = 0.22;
+            rElbowX = -0.45;
+            lShoulderX = 0.22;
+            lElbowX = -0.45;
+            break;
+          }
+
+          case JashanState.THINKING:
+          case JashanState.IDLE_THINK: {
+            // Classic hand-on-chin thoughtful professor pose
+            rShoulderX = -1.15;
+            rShoulderZ = 0.24;
+            rElbowX = -1.65;
+            lShoulderX = 0.15;
+            lElbowX = -0.85;
+            headPitch = -0.11;
+            headRoll = 0.09;
+            headYaw = Math.sin(elapsed * 1.4) * 0.14;
+            break;
+          }
+
+          case JashanState.ANSWERING: {
+            // Expressive lecturing hand gestures + subtle nods
+            rShoulderX = -0.68 + Math.sin(elapsed * 4.2) * 0.18;
+            rShoulderZ = -0.22;
+            rElbowX = -0.95 + Math.cos(elapsed * 4.2) * 0.22;
+            lShoulderX = -0.45 + Math.cos(elapsed * 3.6) * 0.14;
+            lShoulderZ = 0.18;
+            lElbowX = -0.78;
+            headPitch = Math.sin(elapsed * 4.8) * 0.08;
+            torsoYaw = Math.sin(elapsed * 2.0) * 0.06;
+            break;
+          }
+
+          case JashanState.SUCCESS: {
+            // Approving nod & celebratory fist/thumbs-up gesture
+            rShoulderX = -1.45;
+            rElbowX = -1.15;
+            headPitch = Math.sin(elapsed * 7.5) * 0.14;
+            if (stateTimer > 3.2) {
+              setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+            }
+            break;
+          }
+
+          case JashanState.ENCOURAGE: {
+            // Gentle supportive head tilt & open palm gesture
+            rShoulderX = -0.75;
+            rElbowX = -0.75;
+            headRoll = 0.11;
+            headYaw = Math.sin(elapsed * 5.0) * 0.1;
+            if (stateTimer > 3.2) {
+              setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+            }
+            break;
+          }
+
+          case JashanState.IDLE_SIT_LEDGE: {
+            // Seated on top rim of chat panel swinging legs casually
+            pelvisY = 0.46;
+            rHipX = -1.48;
+            lHipX = -1.48;
+            rKneeX = 1.25 + Math.sin(elapsed * 2.8) * 0.26;
+            lKneeX = 1.25 - Math.sin(elapsed * 2.8) * 0.26;
+            rShoulderX = -0.15;
+            rElbowX = -0.35;
+            lShoulderX = -0.15;
+            lElbowX = -0.35;
+            headYaw = Math.sin(elapsed * 1.1) * 0.22;
+            break;
+          }
+
+          case JashanState.IDLE_STRETCH: {
+            const stretchAmt = Math.sin(Math.min(1, stateTimer / 2.2) * Math.PI);
+            rShoulderX = -2.55 * stretchAmt;
+            lShoulderX = -2.55 * stretchAmt;
+            rElbowX = -0.25;
+            lElbowX = -0.25;
+            headPitch = -0.16 * stretchAmt;
+            break;
+          }
+
+          case JashanState.IDLE_CHECK_WATCH: {
+            lShoulderX = -0.95;
+            lShoulderZ = -0.25;
+            lElbowX = -1.45;
+            headPitch = 0.22;
+            headYaw = -0.28;
+            break;
+          }
+
+          case JashanState.IDLE_CHAIR_TEA: {
+            // Seated comfortably in the wooden armchair, periodically lifting the chai cup to take a warm sip
+            pelvisY = 0.48;
+            torsoPitch = -0.08;
+            rHipX = -1.46;
+            lHipX = -1.46;
+            rKneeX = 1.42;
+            lKneeX = 1.42;
+
+            // Left arm rests on wooden armrest
+            lShoulderX = -0.18;
+            lShoulderZ = 0.14;
+            lElbowX = -0.82;
+
+            // Periodic sipping cycle (every ~5.5 seconds)
+            const sipWave = Math.max(0, Math.sin(elapsed * 1.15));
+            const isSipping = sipWave > 0.55;
+            const sipFactor = isSipping ? (sipWave - 0.55) / 0.45 : 0;
+
+            rShoulderX = THREE.MathUtils.lerp(-0.42, -1.25, sipFactor);
+            rShoulderZ = THREE.MathUtils.lerp(-0.15, 0.18, sipFactor);
+            rElbowX = THREE.MathUtils.lerp(-1.05, -1.78, sipFactor);
+            headPitch = THREE.MathUtils.lerp(0.04, -0.12, sipFactor);
+            headYaw = THREE.MathUtils.lerp(0.18, -0.05, sipFactor);
+
+            // Attach chai cup smoothly to Jashan's right hand when seated in the armchair
+            const handWorld = new THREE.Vector3();
+            jashanRig.rightArm.hand.getWorldPosition(handWorld);
+            chaiCupGroup.position.lerp(handWorld.add(new THREE.Vector3(0.02, -0.01, 0.02)), dt * 10);
+            break;
+          }
+
+          case JashanState.IDLE_OBSERVE:
+          default: {
+            headYaw = Math.sin(elapsed * 0.85) * 0.24;
+            headPitch = Math.cos(elapsed * 0.65) * 0.05;
+            break;
+          }
+        }
+      }
+
+      // Return chai cup to the wooden saucer whenever Jashan leaves his armchair
+      if (currentState !== JashanState.IDLE_CHAIR_TEA || jashanController.speed > 0.08) {
+        chaiCupGroup.position.lerp(cupRestingPos, dt * 8);
+      }
+
+      // Gently settle waveboard decks back to level when parked
+      if (!isRidingWaveboard) {
+        waveboard.frontDeck.rotation.x = THREE.MathUtils.lerp(waveboard.frontDeck.rotation.x, 0, dt * 6);
+        waveboard.rearDeck.rotation.x = THREE.MathUtils.lerp(waveboard.rearDeck.rotation.x, 0, dt * 6);
+      }
+
+      // Animate gentle rising steam puffs over the masala chai
+      steamPuffs.forEach((puff, idx) => {
+        const cycle = (elapsed * 0.75 + idx * 0.33) % 1;
+        puff.position.y = 0.038 + cycle * 0.085;
+        puff.position.x = Math.sin(elapsed * 2.2 + idx) * 0.012;
+        puff.scale.setScalar(0.7 + cycle * 0.8);
+        puff.material.opacity = (1 - cycle) * 0.35;
+      });
+
+      // Smoothly interpolate all skeletal joints
+      const lerpRate = Math.min(1, dt * 9.5);
+      jashanRig.pelvis.position.y = THREE.MathUtils.lerp(jashanRig.pelvis.position.y, pelvisY, lerpRate);
+      jashanRig.torso.rotation.x = THREE.MathUtils.lerp(jashanRig.torso.rotation.x, torsoPitch, lerpRate);
+      jashanRig.torso.rotation.z = THREE.MathUtils.lerp(jashanRig.torso.rotation.z, torsoRoll, lerpRate);
+      jashanRig.torso.rotation.y = THREE.MathUtils.lerp(jashanRig.torso.rotation.y, torsoYaw, lerpRate);
+
+      jashanRig.headGroup.rotation.x = THREE.MathUtils.lerp(jashanRig.headGroup.rotation.x, headPitch, lerpRate);
+      jashanRig.headGroup.rotation.y = THREE.MathUtils.lerp(jashanRig.headGroup.rotation.y, headYaw, lerpRate);
+      jashanRig.headGroup.rotation.z = THREE.MathUtils.lerp(jashanRig.headGroup.rotation.z, headRoll, lerpRate);
+
+      jashanRig.rightArm.shoulder.rotation.x = THREE.MathUtils.lerp(jashanRig.rightArm.shoulder.rotation.x, rShoulderX, lerpRate);
+      jashanRig.rightArm.shoulder.rotation.z = THREE.MathUtils.lerp(jashanRig.rightArm.shoulder.rotation.z, rShoulderZ, lerpRate);
+      jashanRig.rightArm.elbow.rotation.x = THREE.MathUtils.lerp(jashanRig.rightArm.elbow.rotation.x, rElbowX, lerpRate);
+
+      jashanRig.leftArm.shoulder.rotation.x = THREE.MathUtils.lerp(jashanRig.leftArm.shoulder.rotation.x, lShoulderX, lerpRate);
+      jashanRig.leftArm.shoulder.rotation.z = THREE.MathUtils.lerp(jashanRig.leftArm.shoulder.rotation.z, lShoulderZ, lerpRate);
+      jashanRig.leftArm.elbow.rotation.x = THREE.MathUtils.lerp(jashanRig.leftArm.elbow.rotation.x, lElbowX, lerpRate);
+
+      jashanRig.rightLeg.hip.rotation.x = THREE.MathUtils.lerp(jashanRig.rightLeg.hip.rotation.x, rHipX, lerpRate);
+      jashanRig.rightLeg.knee.rotation.x = THREE.MathUtils.lerp(jashanRig.rightLeg.knee.rotation.x, rKneeX, lerpRate);
+      jashanRig.leftLeg.hip.rotation.x = THREE.MathUtils.lerp(jashanRig.leftLeg.hip.rotation.x, lHipX, lerpRate);
+      jashanRig.leftLeg.knee.rotation.x = THREE.MathUtils.lerp(jashanRig.leftLeg.knee.rotation.x, lKneeX, lerpRate);
+
+      // Natural blinking & lip sync
+      const blinkCycle = elapsed % 4.3;
+      const eyeScaleY = blinkCycle > 4.16 ? 0.12 : 1.0;
+      jashanRig.leftEye.scale.y = eyeScaleY;
+      jashanRig.rightEye.scale.y = eyeScaleY;
+
+      if (isSpeaking) {
+        speechMouthPhase += dt * 19.0;
+        const mouthOpen = 0.25 + Math.abs(Math.sin(speechMouthPhase)) * 0.95;
+        jashanRig.jawMouth.scale.y = mouthOpen;
+      } else {
+        jashanRig.jawMouth.scale.y = THREE.MathUtils.lerp(jashanRig.jawMouth.scale.y, 0.2, dt * 12);
+      }
+
+      // Autonomous Idle Activity Scheduler when inactive
+      const isBusy =
+        currentState === JashanState.GREETING ||
+        currentState === JashanState.TYPING_RUN ||
+        currentState === JashanState.TYPING_PEEK ||
+        currentState === JashanState.READING ||
+        currentState === JashanState.THINKING ||
+        currentState === JashanState.ANSWERING ||
+        currentState === JashanState.SUCCESS ||
+        currentState === JashanState.ENCOURAGE;
+
+      if (!isBusy && hasEnteredStudyDesk) {
+        idleActionTimer += dt;
+        if (idleActionTimer >= nextIdleSwitch) {
+          idleActionTimer = 0;
+          pickRandomIdleActivity();
+        }
+      } else {
+        idleActionTimer = 0;
+      }
+
+      updateCloudBubblePosition();
+    }
+
+    // =========================================================================
+    // 7. GEMINI API UNIVERSITY TUTOR & FALLBACK ENGINE
+    // =========================================================================
+    const conversationHistory = [];
+
+    function getFallbackProfessorResponse(prompt) {
+      return `That's a great question! Let's break **"${prompt}"** down clearly:\n\n1. **Core Principle:** Start from first principles and identify the inputs, rules, and expected output.\n2. **Step-by-Step Approach:** Solve a tiny concrete example by hand first before generalizing.\n3. **Tip:** Check your network connection or add a custom key via the **⚙️ API Key** button if you're running outside the live preview environment.`;
+    }
+
+    async function callGeminiProfessor(userPrompt) {
+      // Leave apiKey empty by default so the runtime environment injects its key automatically;
+      // use a custom key only if the user explicitly saved one.
+      const customKey = apiKeyInput.value.trim();
+      const apiKey = customKey || "";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: conversationHistory.slice(-14),
+        systemInstruction: {
+          parts: [{
+            text: "You are Professor Jashan Sir, a warm, witty, deeply knowledgeable Punjabi university professor living inside the student's digital study desk (complete with a miniature armchair and cup of masala chai). Speak like a friendly, encouraging mentor and friend—naturally mixing warm Punjabi phrases and expressions in between your English explanations (such as 'Sat Sri Akal ji!', 'Ki haal hai mere dost?', 'Chak de phatte!', 'Bilkul sahi!', 'Tension nahi leni ji', 'Kya baat hai!', 'Samajh gaye na?'), plus light university humor about chai, exams, and coding. Always provide crystal-clear, accurate, well-structured academic explanations, step-by-step code walkthroughs, math solutions, and quizzes."
+          }]
+        }
+      };
+
+      // Exponential backoff retry for transient throttling
+      const delays = [1000, 2000, 4000];
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            if ((res.status === 429 || res.status >= 500) && attempt < delays.length) {
+              await new Promise(r => setTimeout(r, delays[attempt]));
+              continue;
+            }
+            throw new Error(`API HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!reply) {
+            throw new Error('Empty response from Gemini API');
+          }
+          return reply;
+        } catch (err) {
+          if (attempt < delays.length) {
+            await new Promise(r => setTimeout(r, delays[attempt]));
+          } else {
+            throw err;
+          }
+        }
+      }
+    }
+
+    function formatMarkdownToHtml(text) {
+      let safe = escapeHtml(text);
+      // Format fenced code blocks
+      safe = safe.replace(/```(?:\w+)?\n([\s\S]*?)```/g, (_, code) => {
+        return `<pre class="my-2 p-2.5 rounded-xl bg-espresso text-cream font-mono text-xs overflow-x-auto leading-relaxed">${code.trim()}</pre>`;
+      });
+      // Format inline code, bold, bullet lists, and newlines
+      safe = safe
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-espresso font-semibold">$1</strong>')
+        .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-peach/50 text-burntDark font-mono text-xs">$1</code>')
+        .replace(/^\s*[-*]\s+(.*)$/gm, '<div class="pl-3 border-l-2 border-burnt/40 my-1">• $1</div>')
+        .replace(/\n/g, '<br>');
+      return safe;
+    }
+
+    function appendChatMessage(sender, text) {
+      const wrapper = document.createElement('div');
+      if (sender === 'user') {
+        wrapper.className = 'flex items-start justify-end gap-2.5';
+        wrapper.innerHTML = `
+          <div class="bg-burnt text-offwhite rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed shadow-sm max-w-[85%]">
+            ${escapeHtml(text).replace(/\n/g, '<br>')}
+          </div>
+        `;
+      } else {
+        const formatted = formatMarkdownToHtml(text);
+
+        wrapper.className = 'flex items-start gap-2.5';
+        wrapper.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-burnt text-offwhite flex items-center justify-center text-xs font-serif font-bold shrink-0 mt-0.5">
+            J
+          </div>
+          <div class="bg-cream border border-beige rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-espresso leading-relaxed shadow-sm max-w-[88%]">
+            <p class="font-medium text-burntDark text-xs mb-1">Professor Jashan Sir</p>
+            <div>${formatted}</div>
+          </div>
+        `;
+      }
+
+      chatMessages.appendChild(wrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function handleUserSubmission(rawText) {
+      const text = rawText.trim();
+      if (!text) return;
+
+      chatInput.value = '';
+      appendChatMessage('user', text);
+      conversationHistory.push({ role: 'user', parts: [{ text }] });
+
+      // Step 1: Professor Jashan steps away from input box and reads the message
+      setJashanState(JashanState.READING, 'Reading Your Question');
+      await new Promise(r => setTimeout(r, 600));
+
+      // Step 2: Thoughtful chin-rub pose while thinking
+      setJashanState(JashanState.THINKING, 'Thinking Through Explanation');
+
+      let replyText = '';
+      try {
+        replyText = await callGeminiProfessor(text);
+      } catch (err) {
+        replyText = getFallbackProfessorResponse(text);
+      }
+
+      conversationHistory.push({ role: 'model', parts: [{ text: replyText }] });
+
+      // Detect quiz praise or encouragement from Professor Jashan's live reply
+      const lowerReply = replyText.toLowerCase();
+      if (/\b(spot on|well done|correct!|brilliant|exact right|great job)\b/.test(lowerReply)) {
+        setJashanState(JashanState.SUCCESS, 'Proud of Your Answer!');
+      } else if (/\b(not quite|good try|almost there|let's review why)\b/.test(lowerReply)) {
+        setJashanState(JashanState.ENCOURAGE, 'Encouraging You');
+      } else {
+        setJashanState(JashanState.ANSWERING, 'Explaining Answer');
+      }
+
+      // Step 3: Explaining answer with hand gestures, cloud bubble & lip-sync
+      appendChatMessage('professor', replyText);
+      speakText(replyText);
+
+      // Return to natural desk life after explaining
+      setTimeout(() => {
+        if (currentState === JashanState.ANSWERING) {
+          setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+        }
+      }, 6500);
+    }
+
+    // =========================================================================
+    // 8. UI EVENT LISTENERS & WELCOME ENTRANCE FLOW
+    // =========================================================================
+    function enterStudyDeskExperience() {
+      if (hasEnteredStudyDesk) return;
+      hasEnteredStudyDesk = true;
+      welcomeOverlay.classList.add('hidden-gate');
+      setTimeout(() => {
+        triggerGreetingWithWave();
+      }, 280);
+    }
+
+    enterStudyBtn.addEventListener('click', enterStudyDeskExperience);
+
+    window.addEventListener('keydown', (e) => {
+      if (!hasEnteredStudyDesk && e.key === 'Enter') {
+        e.preventDefault();
+        enterStudyDeskExperience();
+      }
+    });
+
+    waveAgainBtn.addEventListener('click', () => {
+      if (!hasEnteredStudyDesk) {
+        enterStudyDeskExperience();
+      } else {
+        triggerGreetingWithWave();
+      }
+    });
+
+    chaiBreakBtn.addEventListener('click', () => {
+      if (!hasEnteredStudyDesk) {
+        enterStudyDeskExperience();
+      }
+      setJashanState(JashanState.IDLE_CHAIR_TEA, 'Sipping Masala Chai in Armchair');
+      const quote = CHAI_BREAK_QUOTES[Math.floor(Math.random() * CHAI_BREAK_QUOTES.length)];
+      speakText(quote);
+    });
+
+    waveboardBtn.addEventListener('click', () => {
+      if (!hasEnteredStudyDesk) {
+        enterStudyDeskExperience();
+      }
+      setJashanState(JashanState.IDLE_WAVEBOARD, 'Carving on His Waveboard');
+      const quote = WAVEBOARD_QUOTES[Math.floor(Math.random() * WAVEBOARD_QUOTES.length)];
+      speakText(quote);
+    });
+
+    // Run toward input box & peek over rim whenever the user types
+    chatInput.addEventListener('input', () => {
+      if (typingTimer) clearTimeout(typingTimer);
+
+      if (chatInput.value.trim().length > 0) {
+        if (
+          currentState !== JashanState.TYPING_RUN &&
+          currentState !== JashanState.TYPING_PEEK
+        ) {
+          setJashanState(JashanState.TYPING_RUN, 'Running to Read Input');
+        }
+        typingTimer = setTimeout(() => {
+          if (
+            currentState === JashanState.TYPING_RUN ||
+            currentState === JashanState.TYPING_PEEK
+          ) {
+            setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+          }
+        }, 3800);
+      } else {
+        setJashanState(JashanState.IDLE_OBSERVE, 'Observing Desk');
+      }
+    });
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (typingTimer) clearTimeout(typingTimer);
+      handleUserSubmission(chatInput.value);
+    });
+
+    document.querySelectorAll('.topic-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prompt = btn.getAttribute('data-prompt');
+        if (prompt) handleUserSubmission(prompt);
+      });
+    });
+
+    quickQuizBtn.addEventListener('click', () => {
+      handleUserSubmission('Give me a quick 1-question multiple choice university quiz.');
+    });
+
+    voiceToggleBtn.addEventListener('click', () => {
+      voiceEnabled = !voiceEnabled;
+      voiceIcon.textContent = voiceEnabled ? '🔊' : '🔇';
+      voiceLabel.textContent = voiceEnabled ? 'Voice On' : 'Muted';
+      if (!voiceEnabled && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+      }
+    });
+
+    settingsToggleBtn.addEventListener('click', () => {
+      apiDrawer.classList.toggle('hidden');
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+      try {
+        localStorage.setItem('jashan_gemini_api_key', apiKeyInput.value.trim());
+      } catch (e) {}
+      apiDrawer.classList.add('hidden');
+      showCloudSpeech('API key saved! Ready for live university tutoring.', 4000);
+    });
+
+    // Optional Photo Projection onto Professor Jashan's 3D Face
+    facePhotoInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = 1024;
+          c.height = 1024;
+          const ctx = c.getContext('2d');
+
+          // Warm skin background
+          ctx.fillStyle = '#C68A62';
+          ctx.fillRect(0, 0, 1024, 1024);
+
+          // Center-crop portrait onto front UV hemisphere
+          const minDim = Math.min(img.width, img.height);
+          const sx = (img.width - minDim) / 2;
+          const sy = (img.height - minDim) / 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(512, 520, 265, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(img, sx, sy, minDim, minDim, 245, 235, 534, 534);
+          ctx.restore();
+
+          const photoTex = new THREE.CanvasTexture(c);
+          faceMat.map = photoTex;
+          faceMat.needsUpdate = true;
+          showCloudSpeech('Reference portrait applied to my 3D face!', 4200);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Responsive Resize Handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      rendererBg.setSize(window.innerWidth, window.innerHeight);
+      rendererFg.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 9. MAIN ANIMATION LOOP & ENTRYPOINT
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      updateProfessorAnimation(dt, elapsed);
+
+      rendererBg.render(sceneBg, camera);
+      rendererFg.render(sceneFg, camera);
+    }
+
+    function startExperience() {
+      if (window.__jashanStarted) return;
+      window.__jashanStarted = true;
+      setJashanState(JashanState.IDLE_OBSERVE, 'Waiting for you to enter the desk...');
+      animate();
+    }
+
+    if (document.readyState === 'complete') {
+      startExperience();
+    } else {
+      window.addEventListener('load', startExperience);
+    }
+  </script>
+</body>
+</html>
