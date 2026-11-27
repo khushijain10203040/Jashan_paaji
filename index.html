@@ -319,31 +319,8 @@
           <span>🎓</span>
           <span class="hidden sm:inline">Quiz Me</span>
         </button>
-
-        <button id="settings-toggle-btn" type="button" title="Configure Gemini API Key"
-          class="px-3 py-2 rounded-xl text-xs font-medium bg-cream hover:bg-peach/60 text-espresso border border-beige transition flex items-center gap-1.5 cursor-pointer">
-          <span>⚙️</span>
-          <span class="hidden md:inline">API Key</span>
-        </button>
       </div>
     </header>
-
-    <!-- Collapsible Gemini API Key Drawer -->
-    <div id="api-drawer" class="hidden w-full max-w-6xl mx-auto mt-2">
-      <div class="interactive-panel rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div class="text-xs text-walnut">
-          <strong class="text-espresso">Gemini API Connection:</strong> Live Gemini AI tutoring is active automatically! Optionally enter your own Google Gemini API key below to override.
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="gemini-api-key" type="password" placeholder="Optional custom key..."
-            class="px-3 py-2 rounded-xl text-xs bg-offwhite border border-beige focus:outline-none focus:border-burnt w-56 text-espresso" />
-          <button id="save-key-btn" type="button"
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-burnt text-offwhite hover:bg-burntDark transition cursor-pointer">
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Main Workspace Area: Leaves open space on the left/center for Professor Jashan's world -->
     <main class="flex-1 flex flex-col md:flex-row items-end justify-end gap-4 w-full max-w-6xl mx-auto my-2 overflow-hidden">
@@ -484,19 +461,9 @@
     const voiceLabel = document.getElementById('voice-label');
     const facePhotoInput = document.getElementById('face-photo-input');
     const quickQuizBtn = document.getElementById('quick-quiz-btn');
-    const settingsToggleBtn = document.getElementById('settings-toggle-btn');
-    const apiDrawer = document.getElementById('api-drawer');
-    const apiKeyInput = document.getElementById('gemini-api-key');
-    const saveKeyBtn = document.getElementById('save-key-btn');
-
-    // Load saved API key if present
-    try {
-      const savedKey = localStorage.getItem('jashan_gemini_api_key');
-      if (savedKey) apiKeyInput.value = savedKey;
-    } catch (e) {}
 
     // =========================================================================
-    // 2. CLOUD SPEECH BUBBLE & SPEECH SYNTHESIS
+    // 2. CLOUD SPEECH BUBBLE & VOICE SYNTHESIS SYSTEM
     // =========================================================================
     function showCloudSpeech(fullText, durationMs = 6500) {
       if (cloudTypewriterInterval) {
@@ -510,10 +477,11 @@
 
       cloudSpeechTextEl.innerHTML = '<span class="typing-caret"></span>';
       cloudSpeechEl.classList.add('visible');
+      updateCloudBubblePosition();
 
       let charIndex = 0;
       const chars = Array.from(fullText);
-      const stepDelay = Math.max(18, Math.min(38, Math.floor(2400 / Math.max(chars.length, 1))));
+      const stepDelay = Math.max(18, Math.min(34, Math.floor(2400 / Math.max(1, chars.length))));
 
       cloudTypewriterInterval = setInterval(() => {
         charIndex++;
@@ -2028,10 +1996,9 @@
     }
 
     async function callGeminiProfessor(userPrompt) {
-      // Leave apiKey empty by default so the runtime environment injects its key automatically;
-      // use a custom key only if the user explicitly saved one.
-      const customKey = apiKeyInput.value.trim();
-      const apiKey = customKey || "";
+      // Leave apiKey as an empty string so the Canvas runtime environment
+      // automatically provides the Gemini API key in the fetch call.
+      const apiKey = "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
       const payload = {
@@ -2262,18 +2229,6 @@
         window.speechSynthesis.cancel();
         isSpeaking = false;
       }
-    });
-
-    settingsToggleBtn.addEventListener('click', () => {
-      apiDrawer.classList.toggle('hidden');
-    });
-
-    saveKeyBtn.addEventListener('click', () => {
-      try {
-        localStorage.setItem('jashan_gemini_api_key', apiKeyInput.value.trim());
-      } catch (e) {}
-      apiDrawer.classList.add('hidden');
-      showCloudSpeech('API key saved! Ready for live university tutoring.', 4000);
     });
 
     // Optional Photo Projection onto Professor Jashan's 3D Face
